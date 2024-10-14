@@ -1,5 +1,6 @@
 package id.my.hendisantika.keycloaksample4.config;
 
+import id.my.hendisantika.keycloaksample4.JwtAuthConverter;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
