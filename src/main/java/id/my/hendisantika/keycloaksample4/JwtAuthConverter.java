@@ -3,6 +3,7 @@ package id.my.hendisantika.keycloaksample4;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.oauth2.jwt.JwtClaimNames;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.security.oauth2.server.resource.authentication.JwtGrantedAuthoritiesConverter;
 import org.springframework.stereotype.Component;
@@ -45,5 +46,13 @@ public class JwtAuthConverter implements Converter<Jwt, AbstractAuthenticationTo
                 authorities,
                 getPrincipleClaimName(jwt)
         );
+    }
+
+    private String getPrincipleClaimName(Jwt jwt) {
+        String claimName = JwtClaimNames.SUB;
+        if (principleAttribute != null) {
+            claimName = principleAttribute;
+        }
+        return jwt.getClaim(claimName);
     }
 }
