@@ -4,6 +4,7 @@ import dasniko.testcontainers.keycloak.KeycloakContainer;
 import io.restassured.RestAssured;
 import jakarta.annotation.PostConstruct;
 import org.apache.http.client.utils.URIBuilder;
+import org.junit.jupiter.api.Test;
 import org.keycloak.admin.client.Keycloak;
 import org.keycloak.admin.client.KeycloakBuilder;
 import org.slf4j.Logger;
@@ -24,6 +25,9 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Collections;
+
+import static io.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.equalTo;
 
 @Testcontainers(disabledWithoutDocker = true)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
@@ -94,5 +98,17 @@ class SpringBootKeycloakSample4ApplicationTests {
             LOGGER.error("Can't obtain an access token from Keycloak!", e);
         }
         return null;
+    }
+
+    @Test
+    void givenAuthenticatedUser_whenGetMe_shouldReturnMyInfo() {
+        given().header("Authorization", getBearerToken())
+                .when()
+                .get("/users/me")
+                .then()
+                .body("username", equalTo("test-user"))
+        /*.body("lastName", equalTo(""))
+        .body("firstName", equalTo("TestUser"))
+        .body("email", equalTo("test-user@howtodoinjava.com"))*/;
     }
 }
