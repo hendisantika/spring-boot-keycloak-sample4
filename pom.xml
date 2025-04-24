@@ -17,7 +17,7 @@
         <java.version>21</java.version>
         <testcontainers.version>1.20.6</testcontainers.version>
         <testcontainers-keycloak.version>3.7.0</testcontainers-keycloak.version>
-        <testcontainers-junit-jupiter.version>1.20.6</testcontainers-junit-jupiter.version>
+        <testcontainers-junit-jupiter.version>1.21.0</testcontainers-junit-jupiter.version>
     </properties>
     <dependencies>
         <dependency>
