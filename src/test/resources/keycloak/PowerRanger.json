@@ -536,6 +536,52 @@
       ],
       "notBefore": 0,
       "groups": []
+    },
+    {
+      "username": "test-user",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "User",
+      "lastName": "Ranger",
+      "email": "test-user@power-ranger.local",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "password",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "default-roles-powerranger"
+      ],
+      "clientRoles": {
+        "green_ranger": [
+          "user"
+        ]
+      }
+    },
+    {
+      "username": "test-admin",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Admin",
+      "lastName": "Ranger",
+      "email": "test-admin@power-ranger.local",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "password",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "default-roles-powerranger"
+      ],
+      "clientRoles": {
+        "green_ranger": [
+          "admin"
+        ]
+      }
     }
   ],
   "scopeMappings": [

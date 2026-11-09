@@ -2,13 +2,8 @@ package id.my.hendisantika.keycloaksample4;
 
 import dasniko.testcontainers.keycloak.KeycloakContainer;
 import io.restassured.RestAssured;
-import jakarta.annotation.PostConstruct;
-import org.apache.http.client.utils.URIBuilder;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.keycloak.admin.client.Keycloak;
-import org.keycloak.admin.client.KeycloakBuilder;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.boot.json.JacksonJsonParser;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.web.server.LocalServerPort;
@@ -22,10 +17,6 @@ import org.springframework.web.reactive.function.client.WebClient;
 import org.testcontainers.junit.jupiter.Container;
 import org.testcontainers.junit.jupiter.Testcontainers;
 
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.util.Collections;
-
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.equalTo;
 
@@ -33,12 +24,12 @@ import static org.hamcrest.Matchers.equalTo;
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 class SpringBootKeycloakSample4ApplicationTests {
 
-    private static final Logger LOGGER
-            = LoggerFactory.getLogger(SpringBootKeycloakSample4ApplicationTests.class.getName());
+    private static final String REALM = "PowerRanger";
+    private static final String CLIENT_ID = "green_ranger";
+    private static final String PASSWORD = "password";
 
     @Container
-    static KeycloakContainer keycloak
-            = new KeycloakContainer("quay.io/keycloak/keycloak:26.0")
+    static KeycloakContainer keycloak = new KeycloakContainer("quay.io/keycloak/keycloak:26.0")
             .withRealmImportFile("keycloak/PowerRanger.json");
 
     @LocalServerPort
@@ -47,68 +38,66 @@ class SpringBootKeycloakSample4ApplicationTests {
     @DynamicPropertySource
     static void registerResourceServerIssuerProperty(DynamicPropertyRegistry registry) {
         registry.add("spring.security.oauth2.resourceserver.jwt.issuer-uri",
-                () -> keycloak.getAuthServerUrl() + "/realms/PowerRanger");
+                () -> keycloak.getAuthServerUrl() + "/realms/" + REALM);
     }
 
-    @PostConstruct
-    public void init() {
+    @BeforeEach
+    void setUp() {
         RestAssured.baseURI = "http://localhost:" + port;
     }
 
-    protected String getBearerToken_v2() {
-        try (Keycloak keycloakAdminClient = KeycloakBuilder.builder()
-                .serverUrl(keycloak.getAuthServerUrl())
-                .realm("master")
-                .clientId("admin-cli")
-                .username(keycloak.getAdminUsername())
-                .password(keycloak.getAdminPassword())
-                .build()) {
+    private String getBearerToken(String username) {
+        MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
+        formData.add("grant_type", "password");
+        formData.add("client_id", CLIENT_ID);
+        formData.add("username", username);
+        formData.add("password", PASSWORD);
 
-            String access_token = keycloakAdminClient.tokenManager().getAccessToken().getToken();
+        String result = WebClient.builder().build()
+                .post()
+                .uri(keycloak.getAuthServerUrl() + "/realms/" + REALM + "/protocol/openid-connect/token")
+                .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                .body(BodyInserters.fromFormData(formData))
+                .retrieve()
+                .bodyToMono(String.class)
+                .block();
 
-            return "Bearer " + access_token;
-        } catch (Exception e) {
-            LOGGER.error("Can't obtain an access token from Keycloak!", e);
-        }
-        return null;
-    }
-
-    protected String getBearerToken() {
-        try {
-            URI authorizationURI = new URIBuilder(keycloak.getAuthServerUrl()
-                    + "/realms/PowerRanger/protocol/openid-connect/token").build();
-            WebClient webclient = WebClient.builder().build();
-            MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
-            formData.put("grant_type", Collections.singletonList("password"));
-            formData.put("client_id", Collections.singletonList("green_ranger"));
-            formData.put("username", Collections.singletonList("test-user"));
-            formData.put("password", Collections.singletonList("password"));
-
-            String result = webclient.post()
-                    .uri(authorizationURI)
-                    .contentType(MediaType.APPLICATION_FORM_URLENCODED)
-                    .body(BodyInserters.fromFormData(formData))
-                    .retrieve()
-                    .bodyToMono(String.class)
-                    .block();
-
-            JacksonJsonParser jsonParser = new JacksonJsonParser();
-            return "Bearer " + jsonParser.parseMap(result).get("access_token").toString();
-        } catch (URISyntaxException e) {
-            LOGGER.error("Can't obtain an access token from Keycloak!", e);
-        }
-        return null;
+        return "Bearer " + new JacksonJsonParser().parseMap(result).get("access_token");
     }
 
     @Test
-    void givenAuthenticatedUser_whenGetMe_shouldReturnMyInfo() {
-        given().header("Authorization", getBearerToken())
-                .when()
-                .get("/users/me")
-                .then()
-                .body("username", equalTo("test-user"))
-        /*.body("lastName", equalTo(""))
-        .body("firstName", equalTo("TestUser"))
-        .body("email", equalTo("test-user@howtodoinjava.com"))*/;
+    void givenAnonymous_whenGetAll_shouldReturnOk() {
+        given().when().get("/api/v1/demo/all")
+                .then().statusCode(200)
+                .body(equalTo("Hello All from Spring boot & Keycloak"));
+    }
+
+    @Test
+    void givenAnonymous_whenGetUser_shouldReturnUnauthorized() {
+        given().when().get("/api/v1/demo/user")
+                .then().statusCode(401);
+    }
+
+    @Test
+    void givenUser_whenGetUser_shouldReturnOk() {
+        given().header("Authorization", getBearerToken("test-user"))
+                .when().get("/api/v1/demo/user")
+                .then().statusCode(200)
+                .body(equalTo("Hello from Spring boot & Keycloak"));
+    }
+
+    @Test
+    void givenUser_whenGetAdmin_shouldReturnForbidden() {
+        given().header("Authorization", getBearerToken("test-user"))
+                .when().get("/api/v1/demo/admin")
+                .then().statusCode(403);
+    }
+
+    @Test
+    void givenAdmin_whenGetAdmin_shouldReturnOk() {
+        given().header("Authorization", getBearerToken("test-admin"))
+                .when().get("/api/v1/demo/admin")
+                .then().statusCode(200)
+                .body(equalTo("Hello from Spring boot & Keycloak - ADMIN"));
     }
 }
