@@ -1,13 +1,65 @@
 version: 2
 updates:
+  # Maven dependencies
   - package-ecosystem: maven
     directory: "/"
     schedule:
       interval: daily
-      time: '05:00'
+      time: "05:00"
       timezone: Asia/Jakarta
     open-pull-requests-limit: 10
-  - package-ecosystem: "github-actions"
+    labels:
+      - dependencies
+      - java
+    commit-message:
+      prefix: "chore(deps)"
+      prefix-development: "chore(deps-dev)"
+      include: scope
+    groups:
+      spring-boot:
+        patterns:
+          - "org.springframework.boot*"
+          - "org.springframework*"
+      testcontainers:
+        patterns:
+          - "org.testcontainers*"
+          - "com.github.dasniko*"
+      rest-assured:
+        patterns:
+          - "io.rest-assured*"
+      maven-plugins:
+        patterns:
+          - "org.apache.maven.plugins*"
+      minor-and-patch:
+        update-types:
+          - minor
+          - patch
+        exclude-patterns:
+          - "org.springframework*"
+          - "org.testcontainers*"
+          - "com.github.dasniko*"
+          - "io.rest-assured*"
+          - "org.apache.maven.plugins*"
+    ignore:
+      # Groovy 4+ moved to the org.apache.groovy groupId; keep 3.x on patch/minor only
+      - dependency-name: "org.codehaus.groovy:groovy"
+        update-types: [ "version-update:semver-major" ]
+
+  # GitHub Actions used in workflows
+  - package-ecosystem: github-actions
     directory: "/"
     schedule:
-      interval: "daily"
+      interval: weekly
+      day: monday
+      time: "05:00"
+      timezone: Asia/Jakarta
+    open-pull-requests-limit: 5
+    labels:
+      - dependencies
+      - github_actions
+    commit-message:
+      prefix: "ci(deps)"
+    groups:
+      github-actions:
+        patterns:
+          - "*"
