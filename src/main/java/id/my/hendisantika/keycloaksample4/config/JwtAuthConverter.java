@@ -1,4 +1,4 @@
-package id.my.hendisantika.keycloaksample4;
+package id.my.hendisantika.keycloaksample4.config;
 
 import lombok.NonNull;
 import org.springframework.beans.factory.annotation.Value;
@@ -55,11 +55,10 @@ public class JwtAuthConverter implements Converter<Jwt, AbstractAuthenticationTo
     }
 
     private String getPrincipleClaimName(Jwt jwt) {
-        String claimName = JwtClaimNames.SUB;
-        if (principleAttribute != null) {
-            claimName = principleAttribute;
+        if (principleAttribute != null && jwt.hasClaim(principleAttribute)) {
+            return jwt.getClaimAsString(principleAttribute);
         }
-        return jwt.getClaim(claimName);
+        return jwt.getClaimAsString(JwtClaimNames.SUB);
     }
 
     private Collection<? extends GrantedAuthority> extractResourceRoles(Jwt jwt) {
